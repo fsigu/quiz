@@ -16,9 +16,17 @@ exports.load = function(req, res, next, quizId) {
 
 // GET /quizes
 exports.index = function(req, res) {
-	models.Quiz.findAll().then(function(quizes) {
-		res.render('quizes/index', { quizes: quizes });
-	})
+	var filtro;
+	var consulta = {};
+	// Determinar si se está usando el buscador de preguntas
+	if(req.query.search) {
+		filtro = (req.query.search || '').replace(" ", "%");
+		consulta = { where: ["lower(pregunta) like lower(?)", '%'+filtro+'%'], order: 'pregunta ASC' };
+	}
+	models.Quiz.findAll(consulta)
+		.then(function(quizes) {
+			res.render('quizes/index', { quizes: quizes });
+		}).catch(function(error) { next(error);});
 };
 
 
