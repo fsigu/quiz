@@ -22,7 +22,8 @@ app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser('Quiz 2015'));
+//app.use(cookieParser('Quiz 2015'));
+app.use(cookieParser('ipowQuizla2015')); // semilla para cifrar la cookie
 app.use(session());
 app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -30,14 +31,34 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(partials());
 
 
-// Helpers dinamicos:
+// Helpers dinámicos para trabajo con sesión
 app.use(function(req, res, next) {
-	// guardar path en session.redir para despues de login
+
+	//1: guardar el path actual en sesión para poder redireccionar tras login o logout
 	if (!req.path.match(/\/login|\/logout/)) {
 		req.session.redir = req.path;
 	}
 
-	// Hacer visible req.session en las vistas
+	//2: auto-logout tras más de 2 minutos de inactividad
+	if (req.session.user) {
+		var d = new Date();
+		var ahora = d.getTime();
+		if (req.session.horaUltimoAcceso) {
+			var inactividad = ahora-req.session.horaUltimoAcceso;
+			if (inactividad > 120000) {
+				delete req.session.user;
+				delete req.session.horaUltimoAcceso;
+				req.session.errors = [
+					{   'message': 'Auto-logout ('+Math.round(inactividad/1000)+' segundos de inactividad)' }
+				];
+				res.redirect('/login');
+				return;
+			}
+		}
+		req.session.horaUltimoAcceso = ahora;
+	}
+
+	//3: pasar la sesión al res.locals para poderlo usar en las vistas
 	res.locals.session = req.session;
 	next();
 });
