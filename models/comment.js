@@ -1,4 +1,4 @@
-// Definicion del modelo de Quiz con validación
+// Definicion del modelo de Comment con validación
 
 module.exports = function(sequelize, DataTypes) {
 	return sequelize.define(
@@ -11,6 +11,15 @@ module.exports = function(sequelize, DataTypes) {
 			type: DataTypes.BOOLEAN,
 			defaultValue: false
 		}
+		},
+		{
+		classMethods: {
+			countUnpublished: function () {
+			return this.count({ where: { publicado: false } });
+		},
+		countCommentedQuizes: function () {
+			return this.aggregate('QuizId', 'count', { distinct: true });
 		}
-	);
-}
+		}
+	});
+};
